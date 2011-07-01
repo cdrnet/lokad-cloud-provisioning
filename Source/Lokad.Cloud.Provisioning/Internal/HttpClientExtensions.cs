@@ -114,13 +114,21 @@ namespace Lokad.Cloud.Provisioning.Internal
                             {
                                 // Consider to use TaskEx.Delay instead once available
                                 ((IDisposable)self).Dispose();
+
+                                // Do not retry if cancelled in the meantime
+                                if (cancellationToken.IsCancellationRequested)
+                                {
+                                    completionSource.TrySetCanceled();
+                                    return;
+                                }
+
                                 SendXmlAsync(httpClient, request, completionSource, cancellationToken, shouldRetry, retryCount + 1, handle);
                             }).Change(retryDelay, TimeSpan.FromMilliseconds(-1));
 
                         return;
                     }
 
-                    if (task.IsCanceled)
+                    if (task.IsCanceled || isCancellationRequested)
                     {
                         completionSource.TrySetCanceled();
                         return;
