@@ -7,13 +7,15 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Lokad.Cloud.Provisioning.Instrumentation;
+using Lokad.Cloud.Provisioning.Instrumentation.Events;
 
 namespace Lokad.Cloud.Provisioning.Internal
 {
     internal static class TaskExtensions
     {
         /// <remarks>Only put short operations in this continuation, or do them async, as the continuation is executed synchronously.</remarks>
-        public static void ContinuePropagateWith<TCompletion, TTask>(this Task<TTask> task, TaskCompletionSource<TCompletion> completionSource, CancellationToken cancellationToken, Action<Task<TTask>> handleCompleted)
+        internal static void ContinuePropagateWith<TCompletion, TTask>(this Task<TTask> task, TaskCompletionSource<TCompletion> completionSource, CancellationToken cancellationToken, Action<Task<TTask>> handleCompleted)
         {
             task.ContinueWith(t =>
                 {
@@ -49,6 +51,35 @@ namespace Lokad.Cloud.Provisioning.Internal
                     }
 
                 }, TaskContinuationOptions.ExecuteSynchronously);
+        }
+
+        internal static void ContinueRaiseSystemEventOnFault(this Task task, ICloudProvisioningObserver observer, Func<AggregateException, ICloudProvisioningEvent> handler)
+        {
+            task.ContinueWith(t =>
+                {
+                    if (!t.IsFaulted)
+                    {
+                        return;
+                    }
+
+                    var exception = t.Exception;
+                    if (exception == null || observer == null)
+                    {
+                        return;
+                    }
+
+                    try
+                    {
+                        observer.Notify(handler(exception));
+                    }
+// ReSharper disable EmptyGeneralCatchClause
+                    catch
+// ReSharper restore EmptyGeneralCatchClause
+                    {
+                        // Suppression is intended: we can't log but also don't want to tear down just because of a failed notification.
+                        // Also, this is not where exceptions are handled in the first place, since the failed tasks are returned to the application.
+                    }
+                }, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
         }
     }
 }

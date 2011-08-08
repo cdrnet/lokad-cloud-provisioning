@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Lokad.Cloud.Provisioning.Info;
 using Lokad.Cloud.Provisioning.Instrumentation;
+using Lokad.Cloud.Provisioning.Instrumentation.Events;
 using Lokad.Cloud.Provisioning.Internal;
 
 namespace Lokad.Cloud.Provisioning
@@ -21,12 +22,14 @@ namespace Lokad.Cloud.Provisioning
     {
         readonly string _subscriptionId;
         readonly X509Certificate2 _certificate;
+        readonly ICloudProvisioningObserver _observer;
         readonly RetryPolicies _policies;
 
         public AzureProvisioning(string subscriptionId, X509Certificate2 certificate, ICloudProvisioningObserver observer = null)
         {
             _subscriptionId = subscriptionId;
             _certificate = certificate;
+            _observer = observer;
             _policies = new RetryPolicies(observer);
         }
 
@@ -39,6 +42,8 @@ namespace Lokad.Cloud.Provisioning
                 completionSource, cancellationToken,
                 queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value)));
 
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningQueryFailedEvent(ex));
+
             return completionSource.Task;
         }
 
@@ -50,6 +55,8 @@ namespace Lokad.Cloud.Provisioning
             DoGetDeploymentConfiguration(client, serviceName, deploymentName, cancellationToken).ContinuePropagateWith(
                 completionSource, cancellationToken,
                 queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value)));
+
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningQueryFailedEvent(ex));
 
             return completionSource.Task;
         }
@@ -64,6 +71,8 @@ namespace Lokad.Cloud.Provisioning
                 discoveryTask => DoGetDeploymentConfiguration(client, discoveryTask.Result.HostedServiceName, discoveryTask.Result.DeploymentName, cancellationToken).ContinuePropagateWith(
                     completionSource, cancellationToken,
                     queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value))));
+
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningQueryFailedEvent(ex));
 
             return completionSource.Task;
         }
@@ -87,6 +96,8 @@ namespace Lokad.Cloud.Provisioning
                             .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                     });
 
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningCommandFailedEvent(ex));
+
             return completionSource.Task;
         }
 
@@ -108,6 +119,8 @@ namespace Lokad.Cloud.Provisioning
                         DoUpdateDeploymentConfiguration(client, serviceName, deploymentName, config, cancellationToken)
                             .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                     });
+
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningCommandFailedEvent(ex));
 
             return completionSource.Task;
         }
@@ -132,6 +145,8 @@ namespace Lokad.Cloud.Provisioning
                                 DoUpdateDeploymentConfiguration(client, discoveryTask.Result.HostedServiceName, discoveryTask.Result.DeploymentName, config, cancellationToken)
                                     .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                             }));
+
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new ProvisioningCommandFailedEvent(ex));
 
             return completionSource.Task;
         }

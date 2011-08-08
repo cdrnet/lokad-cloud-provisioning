@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lokad.Cloud.Provisioning.Info;
 using Lokad.Cloud.Provisioning.Instrumentation;
+using Lokad.Cloud.Provisioning.Instrumentation.Events;
 using Lokad.Cloud.Provisioning.Internal;
 
 namespace Lokad.Cloud.Provisioning
@@ -20,25 +21,31 @@ namespace Lokad.Cloud.Provisioning
     {
         readonly string _subscriptionId;
         readonly X509Certificate2 _certificate;
+        readonly ICloudProvisioningObserver _observer;
         readonly RetryPolicies _policies;
 
         public AzureDiscovery(string subscriptionId, X509Certificate2 certificate, ICloudProvisioningObserver observer = null)
         {
             _subscriptionId = subscriptionId;
             _certificate = certificate;
+            _observer = observer;
             _policies = new RetryPolicies(observer);
         }
 
         public Task<HostedServiceInfo> DiscoverHostedService(string serviceName, CancellationToken cancellationToken)
         {
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
-            return DoDiscoverHostedService(client, serviceName, cancellationToken);
+            var task = DoDiscoverHostedService(client, serviceName, cancellationToken);
+            task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+            return task;
         }
 
         public Task<HostedServiceInfo[]> DiscoverHostedServices(CancellationToken cancellationToken)
         {
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
-            return DoDiscoverHostedServices(client, cancellationToken);
+            var task = DoDiscoverHostedServices(client, cancellationToken);
+            task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+            return task;
         }
 
         public Task<DeploymentReference> DiscoverDeployment(string deploymentPrivateId, CancellationToken cancellationToken)
@@ -46,6 +53,7 @@ namespace Lokad.Cloud.Provisioning
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
             var completionSource = new TaskCompletionSource<DeploymentReference>();
             DoDiscoverDeploymentAsync(client, deploymentPrivateId, completionSource, cancellationToken);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
             return completionSource.Task;
         }
 

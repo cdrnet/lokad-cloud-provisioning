@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Lokad.Cloud.Provisioning.Info;
 using Lokad.Cloud.Provisioning.Instrumentation;
+using Lokad.Cloud.Provisioning.Instrumentation.Events;
 using Lokad.Cloud.Provisioning.Internal;
 
 namespace Lokad.Cloud.Provisioning
@@ -70,6 +71,7 @@ namespace Lokad.Cloud.Provisioning
             if (previousTask == null)
             {
                 discovery.DoDiscoverDeploymentAsync(client, _deploymentPrivateId, completionSource, cancellationToken);
+                completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
                 return completionSource.Task;
             }
 
@@ -82,10 +84,8 @@ namespace Lokad.Cloud.Provisioning
                 {
                     if (task.IsFaulted || (task.IsCanceled && !cancellationToken.IsCancellationRequested))
                     {
-                        // Make sure the task doesn't throw at finalization
-                        task.Exception.GetBaseException();
-
                         discovery.DoDiscoverDeploymentAsync(client, _deploymentPrivateId, completionSource, cancellationToken);
+                        completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
                         return;
                     }
 
