@@ -173,7 +173,7 @@ namespace Lokad.Cloud.Provisioning
                 .Attribute("count");
         }
 
-        ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
+        static ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
         {
             HttpStatusCode httpStatus;
             if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))

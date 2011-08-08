@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -36,7 +37,7 @@ namespace Lokad.Cloud.Provisioning
         {
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
             var task = DoDiscoverHostedService(client, serviceName, cancellationToken);
-            task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+            task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
             return task;
         }
 
@@ -44,7 +45,7 @@ namespace Lokad.Cloud.Provisioning
         {
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
             var task = DoDiscoverHostedServices(client, cancellationToken);
-            task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+            task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
             return task;
         }
 
@@ -53,8 +54,23 @@ namespace Lokad.Cloud.Provisioning
             var client = HttpClientFactory.Create(_subscriptionId, _certificate);
             var completionSource = new TaskCompletionSource<DeploymentReference>();
             DoDiscoverDeploymentAsync(client, deploymentPrivateId, completionSource, cancellationToken);
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
             return completionSource.Task;
+        }
+
+        internal static ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
+        {
+            HttpStatusCode httpStatus;
+            if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))
+            {
+                return ProvisioningErrorHandling.IsTransientError(exception)
+                    ? (ICloudProvisioningEvent)new DiscoveryFailedTransientEvent(exception, httpStatus)
+                    : new DiscoveryFailedPermanentEvent(exception, httpStatus);
+            }
+
+            return ProvisioningErrorHandling.IsTransientError(exception)
+                ? (ICloudProvisioningEvent)new DiscoveryFailedTransientEvent(exception)
+                : new DiscoveryFailedPermanentEvent(exception);
         }
 
         internal void DoDiscoverDeploymentAsync(HttpClient client, string deploymentPrivateId, TaskCompletionSource<DeploymentReference> completionSource, CancellationToken cancellationToken)

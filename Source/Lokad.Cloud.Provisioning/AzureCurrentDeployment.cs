@@ -71,7 +71,7 @@ namespace Lokad.Cloud.Provisioning
             if (previousTask == null)
             {
                 discovery.DoDiscoverDeploymentAsync(client, _deploymentPrivateId, completionSource, cancellationToken);
-                completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+                completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, AzureDiscovery.EventForFailedOperation);
                 return completionSource.Task;
             }
 
@@ -85,7 +85,7 @@ namespace Lokad.Cloud.Provisioning
                     if (task.IsFaulted || (task.IsCanceled && !cancellationToken.IsCancellationRequested))
                     {
                         discovery.DoDiscoverDeploymentAsync(client, _deploymentPrivateId, completionSource, cancellationToken);
-                        completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, ex => new DiscoveryFailedEvent(ex));
+                        completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, AzureDiscovery.EventForFailedOperation);
                         return;
                     }
 
