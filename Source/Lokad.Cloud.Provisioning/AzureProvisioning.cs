@@ -42,7 +42,7 @@ namespace Lokad.Cloud.Provisioning
                 completionSource, cancellationToken,
                 queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value)));
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedQuery);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -56,7 +56,7 @@ namespace Lokad.Cloud.Provisioning
                 completionSource, cancellationToken,
                 queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value)));
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedQuery);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -72,7 +72,7 @@ namespace Lokad.Cloud.Provisioning
                     completionSource, cancellationToken,
                     queryTask => completionSource.TrySetResult(Int32.Parse(GetInstanceCountConfigElement(queryTask.Result, roleName).Value))));
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedQuery);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -96,7 +96,7 @@ namespace Lokad.Cloud.Provisioning
                             .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                     });
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedCommand);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -120,7 +120,7 @@ namespace Lokad.Cloud.Provisioning
                             .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                     });
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedCommand);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -146,7 +146,7 @@ namespace Lokad.Cloud.Provisioning
                                     .ContinuePropagateWith(completionSource, cancellationToken, updateTask => completionSource.TrySetResult(updateTask.Result));
                             }));
 
-            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedCommand);
+            completionSource.Task.ContinueRaiseSystemEventOnFault(_observer, EventForFailedOperation);
 
             return completionSource.Task;
         }
@@ -173,40 +173,25 @@ namespace Lokad.Cloud.Provisioning
                 .Attribute("count");
         }
 
-        ICloudProvisioningEvent EventForFailedQuery(AggregateException exception)
+        ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
         {
             HttpStatusCode httpStatus;
             if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))
             {
-                return ProvisioningErrorHandling.IsTransientError(exception)
-                    ? (ICloudProvisioningEvent)new ProvisioningQueryFailedTransientEvent(exception, httpStatus)
-                    : new ProvisioningQueryFailedPermanentEvent(exception, httpStatus);
-            }
-
-            return ProvisioningErrorHandling.IsTransientError(exception)
-                ? (ICloudProvisioningEvent)new ProvisioningQueryFailedTransientEvent(exception)
-                : new ProvisioningQueryFailedPermanentEvent(exception);
-        }
-
-        ICloudProvisioningEvent EventForFailedCommand(AggregateException exception)
-        {
-            HttpStatusCode httpStatus;
-            if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))
-            {
-                switch(httpStatus)
+                switch (httpStatus)
                 {
                     case HttpStatusCode.Conflict:
-                        return new ProvisioningCommandFailedBecauseOfConflictEvent(exception);
+                        return new ProvisioningFailedBecauseOfConflictEvent(exception);
                 }
 
                 return ProvisioningErrorHandling.IsTransientError(exception)
-                    ? (ICloudProvisioningEvent)new ProvisioningCommandFailedTransientEvent(exception, httpStatus)
-                    : new ProvisioningCommandFailedPermanentEvent(exception, httpStatus);
+                    ? (ICloudProvisioningEvent)new ProvisioningFailedTransientEvent(exception, httpStatus)
+                    : new ProvisioningFailedPermanentEvent(exception, httpStatus);
             }
 
             return ProvisioningErrorHandling.IsTransientError(exception)
-                ? (ICloudProvisioningEvent)new ProvisioningCommandFailedTransientEvent(exception)
-                : new ProvisioningCommandFailedPermanentEvent(exception);
+                ? (ICloudProvisioningEvent)new ProvisioningFailedTransientEvent(exception)
+                : new ProvisioningFailedPermanentEvent(exception);
         }
 
         public Task<int> GetLokadCloudWorkerCount(string serviceName, DeploymentSlot deploymentSlot, CancellationToken cancellationToken)

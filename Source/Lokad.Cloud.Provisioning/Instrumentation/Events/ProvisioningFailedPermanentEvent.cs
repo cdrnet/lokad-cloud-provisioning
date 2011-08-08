@@ -4,16 +4,19 @@
 #endregion
 
 using System;
+using System.Net;
 
 namespace Lokad.Cloud.Provisioning.Instrumentation.Events
 {
-    public class ProvisioningCommandFailedBecauseOfConflictEvent : ICloudProvisioningEvent
+    public class ProvisioningFailedPermanentEvent : ICloudProvisioningEvent
     {
         public AggregateException Exception { get; private set; }
+        public HttpStatusCode HttpStatus { get; private set; }
 
-        public ProvisioningCommandFailedBecauseOfConflictEvent(AggregateException exception)
+        public ProvisioningFailedPermanentEvent(AggregateException exception, HttpStatusCode httpStatus = HttpStatusCode.Unused)
         {
             Exception = exception;
+            HttpStatus = httpStatus;
         }
     }
 }
