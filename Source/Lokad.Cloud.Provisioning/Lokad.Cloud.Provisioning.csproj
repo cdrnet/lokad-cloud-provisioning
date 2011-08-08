@@ -67,8 +67,11 @@
       <Link>Properties\VersionAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AzureDiscovery.cs" />
-    <Compile Include="Instrumentation\Events\ProvisioningCommandFailedEvent.cs" />
-    <Compile Include="Instrumentation\Events\ProvisioningQueryFailedEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningQueryFailedPermanentEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningCommandFailedPermanentEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningCommandFailedBecauseOfConflictEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningCommandFailedTransientEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningQueryFailedTransientEvent.cs" />
     <Compile Include="Instrumentation\Events\DiscoveryFailedEvent.cs" />
     <Compile Include="Internal\AzureXml.cs" />
     <Compile Include="Internal\HttpClientFactory.cs" />
