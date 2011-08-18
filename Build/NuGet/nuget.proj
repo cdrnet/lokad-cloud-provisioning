@@ -1,0 +1,44 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="BuildPackages" ToolsVersion="4.0">
+	<UsingTask AssemblyFile="$(MSBuildProjectDirectory)/../MSBuild/MSBuild.Community.Tasks.dll" TaskName="MSBuild.Community.Tasks.XmlUpdate" />
+	<UsingTask AssemblyFile="$(MSBuildProjectDirectory)/../MSBuild/MSBuild.Community.Tasks.dll" TaskName="MSBuild.Community.Tasks.FileUpdate" />
+
+	<PropertyGroup>
+		<Root>$(MSBuildProjectDirectory)/../..</Root>
+		<OutNuGetPackages>$(MSBuildProjectDirectory)/out</OutNuGetPackages>
+		<ProvisioningOut>$(MSBuildProjectDirectory)/../../Source/Lokad.Cloud.Provisioning/bin/Release</ProvisioningOut>
+		<ProvisioningPack>$(MSBuildProjectDirectory)/Lokad.Cloud.Provisioning</ProvisioningPack>
+		<NuGetExe>$(MSBuildProjectDirectory)/../../Tools/nuget.exe</NuGetExe>
+	</PropertyGroup>
+	
+	<ItemGroup>
+		<ProvisioningNet40 Include="$(ProvisioningOut)/Lokad.Cloud.Provisioning.dll;$(ProvisioningOut)/Lokad.Cloud.Provisioning.pdb;$(ProvisioningOut)/Lokad.Cloud.Provisioning.xml" />
+	</ItemGroup>
+	
+	<Target Name="CopyContentFiles">
+		<RemoveDir Directories="$(ProvisioningPack)/content" />
+		<!-- <Copy SourceFiles="$(Root)/README.markdown" DestinationFiles="$(ProvisioningPack)/content/App_Readme/Lokad.Cloud.Provisioning.readme.txt" /> -->
+		<!-- <Copy SourceFiles="$(Root)/COPYRIGHT.markdown" DestinationFiles="$(ProvisioningPack)/content/App_Readme/Lokad.Cloud.Provisioning.copyright.txt" /> -->
+		<!-- <Copy SourceFiles="$(Root)/AUTHORS.markdown" DestinationFiles="$(ProvisioningPack)/content/App_Readme/Lokad.Cloud.Provisioning.authors.txt" /> -->
+		
+		<RemoveDir Directories="$(ProvisioningPack)/lib" />
+		<Copy SourceFiles="@(ProvisioningNet40)" DestinationFolder="$(ProvisioningPack)/lib" />
+	</Target>
+
+	<Target Name="UpdateNuspec" DependsOnTargets="CopyContentFiles">
+		<GetAssemblyIdentity AssemblyFiles="$(ProvisioningPack)/lib/Lokad.Cloud.Provisioning.dll">
+			<Output TaskParameter="Assemblies" ItemName="StorageAssemblyInfo"/>
+		</GetAssemblyIdentity>
+		<XmlUpdate
+			Prefix="n" Namespace="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"
+			XmlFileName="$(ProvisioningPack)/Lokad.Cloud.Provisioning.nuspec"
+			XPath="//n:package/n:metadata/n:version"
+			Value="%(StorageAssemblyInfo.Version)"/>
+	</Target>
+
+	<Target Name="BuildPackages" DependsOnTargets="UpdateNuspec">
+		<RemoveDir Directories="$(OutNuGetPackages)" />
+		<MakeDir Directories="$(OutNuGetPackages)" />
+		<Exec Command="$(NuGetExe) pack $(ProvisioningPack)/Lokad.Cloud.Provisioning.nuspec /Verbose /OutputDirectory $(OutNuGetPackages)" />
+	</Target>
+
+</Project>
