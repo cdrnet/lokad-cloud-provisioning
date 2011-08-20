@@ -75,26 +75,67 @@ namespace Lokad.Cloud.Provisioning
 
         internal void DoDiscoverDeploymentAsync(HttpClient client, string deploymentPrivateId, TaskCompletionSource<DeploymentReference> completionSource, CancellationToken cancellationToken)
         {
-            DoDiscoverHostedServices(client, cancellationToken).ContinuePropagateWith(completionSource, cancellationToken, task =>
-            {
-                foreach (var hostedService in task.Result)
+            DoDiscoverDeployments(client, cancellationToken).ContinuePropagateWith(completionSource, cancellationToken, task =>
                 {
-                    var deployment = hostedService.Deployments.FirstOrDefault(di => di.PrivateId == deploymentPrivateId);
+                    var deployment = task.Result.FirstOrDefault(d => d.DeploymentPrivateId == deploymentPrivateId);
                     if (deployment != null)
                     {
-                        completionSource.TrySetResult(new DeploymentReference
-                        {
-                            HostedServiceName = hostedService.ServiceName,
-                            DeploymentName = deployment.DeploymentName,
-                            DeploymentPrivateId = deployment.PrivateId
-                        });
-
-                        return;
+                        completionSource.TrySetResult(deployment);
                     }
-                }
+                    else
+                    {
+                        completionSource.TrySetException(new KeyNotFoundException());
+                    }
+                });
+        }
 
-                completionSource.TrySetException(new KeyNotFoundException());
-            });
+        Task<DeploymentReference[]> DoDiscoverDeployment(HttpClient client, string serviceName, CancellationToken cancellationToken)
+        {
+            return client.GetXmlAsync<DeploymentReference[]>(
+                string.Format("services/hostedservices/{0}?embed-detail=true", serviceName),
+                cancellationToken, _policies.RetryOnTransientErrors,
+                (xml, tcs) =>
+                {
+                    var xmlService = xml.AzureElement("HostedService");
+                    var references = xmlService.AzureElements("Deployments", "Deployment").Select(d => new DeploymentReference
+                    {
+                        HostedServiceName = xmlService.AzureValue("ServiceName"),
+                        DeploymentName = d.AzureValue("Name"),
+                        DeploymentPrivateId = d.AzureValue("PrivateID")
+                    }).ToArray();
+
+                    tcs.TrySetResult(references);
+                });
+        }
+
+        Task<DeploymentReference[]> DoDiscoverDeployments(HttpClient client, CancellationToken cancellationToken)
+        {
+            return client.GetXmlAsync<DeploymentReference[]>(
+                "services/hostedservices",
+                cancellationToken, _policies.RetryOnTransientErrors,
+                (xml, tcs) =>
+                {
+                    var serviceNames = xml.AzureElements("HostedServices", "HostedService")
+                        .Select(e => e.AzureValue("ServiceName"))
+                        .ToArray();
+
+                    Task.Factory.ContinueWhenAll(
+                        serviceNames.Select(serviceName => DoDiscoverDeployment(client, serviceName, cancellationToken)).ToArray(),
+                        tasks =>
+                        {
+                            // TODO (ruegg, 2011-05-27): Check task fault state and deal with it
+
+                            try
+                            {
+                                tcs.TrySetResult(tasks.SelectMany(t => t.Result).ToArray());
+                            }
+                            catch (Exception e)
+                            {
+                                tcs.TrySetException(e);
+                            }
+                        },
+                        cancellationToken);
+                });
         }
 
         Task<HostedServiceInfo> DoDiscoverHostedService(HttpClient client, string serviceName, CancellationToken cancellationToken)
