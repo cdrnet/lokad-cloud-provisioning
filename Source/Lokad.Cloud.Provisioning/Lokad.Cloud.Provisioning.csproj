@@ -49,7 +49,7 @@
     <DocumentationFile>bin\Release\Lokad.Cloud.Provisioning.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Net.Http, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Net.Http">
       <HintPath>..\..\packages\HttpClient.0.3.0\lib\40\Microsoft.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -60,12 +60,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\GlobalAssemblyInfo.cs">
-      <Link>Properties\GlobalAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="..\VersionAssemblyInfo.cs">
-      <Link>Properties\VersionAssemblyInfo.cs</Link>
-    </Compile>
     <Compile Include="AzureDiscovery.cs" />
     <Compile Include="Instrumentation\Events\DiscoveryFailedPermanentEvent.cs" />
     <Compile Include="Instrumentation\Events\ProvisioningFailedPermanentEvent.cs" />
@@ -94,9 +88,6 @@
     <Compile Include="Instrumentation\ICloudProvisioningObserver.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Instrumentation\_readme.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -120,6 +111,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

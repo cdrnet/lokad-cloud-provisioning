@@ -25,14 +25,27 @@
 	</Target>
 
 	<Target Name="UpdateNuspec" DependsOnTargets="CopyContentFiles">
+	
+		<!-- Evaluate Assembly Identity -->
 		<GetAssemblyIdentity AssemblyFiles="$(ProvisioningPack)/lib/Lokad.Cloud.Provisioning.dll">
-			<Output TaskParameter="Assemblies" ItemName="StorageAssemblyInfo"/>
+			<Output TaskParameter="Assemblies" ItemName="ProvisioningAssemblyInfo"/>
 		</GetAssemblyIdentity>
+		
+		<!-- Extract Assembly Versions -->
+		<PropertyGroup>
+			<ProvisioningAssemblyVersion>%(ProvisioningAssemblyInfo.Version)</ProvisioningAssemblyVersion>
+		</PropertyGroup>
+		
+		<!-- Package Versions (skip 4th part/build number, for semvar compliance) -->
+		<PropertyGroup>
+			<ProvisioningPackVersion>$(ProvisioningAssemblyVersion.Substring(0, $(ProvisioningAssemblyVersion.LastIndexOf('.'))))</ProvisioningPackVersion>
+		</PropertyGroup>
+		
 		<XmlUpdate
 			Prefix="n" Namespace="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"
 			XmlFileName="$(ProvisioningPack)/Lokad.Cloud.Provisioning.nuspec"
 			XPath="//n:package/n:metadata/n:version"
-			Value="%(StorageAssemblyInfo.Version)"/>
+			Value="$(ProvisioningPackVersion)"/>
 	</Target>
 
 	<Target Name="BuildPackages" DependsOnTargets="UpdateNuspec">
