@@ -10,9 +10,11 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
 {
     internal static class DescribeEvent
     {
-        internal static XElement Meta(AggregateException exception)
+        internal static XElement Meta(AggregateException exception, string eventName)
         {
-            var meta = new XElement("Meta");
+            var meta = new XElement("Meta",
+                new XElement("Component", "Lokad.Cloud.Provisioning"),
+                new XElement("Event", eventName));
 
             if (exception != null)
             {

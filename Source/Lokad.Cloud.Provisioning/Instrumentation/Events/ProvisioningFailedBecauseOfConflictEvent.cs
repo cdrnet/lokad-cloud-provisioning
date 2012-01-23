@@ -26,7 +26,7 @@ namespace Lokad.Cloud.Provisioning.Instrumentation.Events
 
         public XElement DescribeMeta()
         {
-            return DescribeEvent.Meta(Exception);
+            return DescribeEvent.Meta(Exception, "ProvisioningFailedBecauseOfConflictEvent");
         }
     }
 }

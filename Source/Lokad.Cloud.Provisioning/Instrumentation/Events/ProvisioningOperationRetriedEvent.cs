@@ -39,7 +39,9 @@ namespace Lokad.Cloud.Provisioning.Instrumentation.Events
 
         public XElement DescribeMeta()
         {
-            var meta = new XElement("Meta");
+            var meta = new XElement("Meta",
+                new XElement("Component", "Lokad.Cloud.Provisioning"),
+                new XElement("Event", "ProvisioningOperationRetriedEvent"));
 
             if (Exception != null)
             {
