@@ -32,13 +32,13 @@ namespace Lokad.Cloud.Provisioning
         readonly string _subscriptionId;
         readonly X509Certificate2 _certificate;
         readonly string _deploymentPrivateId;
-        readonly ICloudProvisioningObserver _observer;
+        readonly IProvisioningObserver _observer;
 
         readonly object _currentDeploymentDiscoveryLock = new object();
         Task<DeploymentReference> _currentDeploymentDiscoveryTask;
         DeploymentReference _currentDeployment;
 
-        public AzureCurrentDeployment(string deploymentPrivateId, string subscriptionId, X509Certificate2 certificate, ICloudProvisioningObserver observer = null)
+        public AzureCurrentDeployment(string deploymentPrivateId, string subscriptionId, X509Certificate2 certificate, IProvisioningObserver observer = null)
         {
             _subscriptionId = subscriptionId;
             _certificate = certificate;

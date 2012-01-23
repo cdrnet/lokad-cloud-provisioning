@@ -22,10 +22,10 @@ namespace Lokad.Cloud.Provisioning
     {
         readonly string _subscriptionId;
         readonly X509Certificate2 _certificate;
-        readonly ICloudProvisioningObserver _observer;
+        readonly IProvisioningObserver _observer;
         readonly RetryPolicies _policies;
 
-        public AzureProvisioning(string subscriptionId, X509Certificate2 certificate, ICloudProvisioningObserver observer = null)
+        public AzureProvisioning(string subscriptionId, X509Certificate2 certificate, IProvisioningObserver observer = null)
         {
             _subscriptionId = subscriptionId;
             _certificate = certificate;
@@ -173,7 +173,7 @@ namespace Lokad.Cloud.Provisioning
                 .Attribute("count");
         }
 
-        static ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
+        static IProvisioningEvent EventForFailedOperation(AggregateException exception)
         {
             HttpStatusCode httpStatus;
             if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))
@@ -185,12 +185,12 @@ namespace Lokad.Cloud.Provisioning
                 }
 
                 return ProvisioningErrorHandling.IsTransientError(exception)
-                    ? (ICloudProvisioningEvent)new ProvisioningFailedTransientEvent(exception, httpStatus)
+                    ? (IProvisioningEvent)new ProvisioningFailedTransientEvent(exception, httpStatus)
                     : new ProvisioningFailedPermanentEvent(exception, httpStatus);
             }
 
             return ProvisioningErrorHandling.IsTransientError(exception)
-                ? (ICloudProvisioningEvent)new ProvisioningFailedTransientEvent(exception)
+                ? (IProvisioningEvent)new ProvisioningFailedTransientEvent(exception)
                 : new ProvisioningFailedPermanentEvent(exception);
         }
 

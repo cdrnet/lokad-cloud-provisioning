@@ -53,7 +53,7 @@ namespace Lokad.Cloud.Provisioning.Internal
                 }, TaskContinuationOptions.ExecuteSynchronously);
         }
 
-        internal static void ContinueRaiseSystemEventOnFault(this Task task, ICloudProvisioningObserver observer, Func<AggregateException, ICloudProvisioningEvent> handler)
+        internal static void ContinueRaiseSystemEventOnFault(this Task task, IProvisioningObserver observer, Func<AggregateException, IProvisioningEvent> handler)
         {
             task.ContinueWith(t =>
                 {

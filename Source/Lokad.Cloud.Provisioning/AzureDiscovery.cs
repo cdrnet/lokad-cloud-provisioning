@@ -22,10 +22,10 @@ namespace Lokad.Cloud.Provisioning
     {
         readonly string _subscriptionId;
         readonly X509Certificate2 _certificate;
-        readonly ICloudProvisioningObserver _observer;
+        readonly IProvisioningObserver _observer;
         readonly RetryPolicies _policies;
 
-        public AzureDiscovery(string subscriptionId, X509Certificate2 certificate, ICloudProvisioningObserver observer = null)
+        public AzureDiscovery(string subscriptionId, X509Certificate2 certificate, IProvisioningObserver observer = null)
         {
             _subscriptionId = subscriptionId;
             _certificate = certificate;
@@ -58,18 +58,18 @@ namespace Lokad.Cloud.Provisioning
             return completionSource.Task;
         }
 
-        internal static ICloudProvisioningEvent EventForFailedOperation(AggregateException exception)
+        internal static IProvisioningEvent EventForFailedOperation(AggregateException exception)
         {
             HttpStatusCode httpStatus;
             if (ProvisioningErrorHandling.TryGetHttpStatusCode(exception, out httpStatus))
             {
                 return ProvisioningErrorHandling.IsTransientError(exception)
-                    ? (ICloudProvisioningEvent)new DiscoveryFailedTransientEvent(exception, httpStatus)
+                    ? (IProvisioningEvent)new DiscoveryFailedTransientEvent(exception, httpStatus)
                     : new DiscoveryFailedPermanentEvent(exception, httpStatus);
             }
 
             return ProvisioningErrorHandling.IsTransientError(exception)
-                ? (ICloudProvisioningEvent)new DiscoveryFailedTransientEvent(exception)
+                ? (IProvisioningEvent)new DiscoveryFailedTransientEvent(exception)
                 : new DiscoveryFailedPermanentEvent(exception);
         }
 

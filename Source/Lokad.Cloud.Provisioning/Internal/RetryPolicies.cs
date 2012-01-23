@@ -19,10 +19,10 @@ namespace Lokad.Cloud.Provisioning.Internal
         internal delegate bool ShouldRetry(int retryCount, Exception lastException, out TimeSpan delay);
         internal delegate ShouldRetry RetryPolicy();
 
-        private readonly ICloudProvisioningObserver _observer;
+        private readonly IProvisioningObserver _observer;
 
         /// <param name="observer">Can be <see langword="null"/>.</param>
-        internal RetryPolicies(ICloudProvisioningObserver observer)
+        internal RetryPolicies(IProvisioningObserver observer)
         {
             _observer = observer;
         }

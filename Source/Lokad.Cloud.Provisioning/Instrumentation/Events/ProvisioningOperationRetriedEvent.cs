@@ -1,9 +1,10 @@
-﻿#region Copyright (c) Lokad 2011
+﻿#region Copyright (c) Lokad 2010-2012
 // This code is released under the terms of the new BSD licence.
 // URL: http://www.lokad.com/
 #endregion
 
 using System;
+using System.Xml.Linq;
 
 namespace Lokad.Cloud.Provisioning.Instrumentation.Events
 {
@@ -11,10 +12,9 @@ namespace Lokad.Cloud.Provisioning.Instrumentation.Events
     /// Raised whenever a provisioning operation is retried.
     /// Useful for analyzing retry policy behavior.
     /// </summary>
-    public class ProvisioningOperationRetriedEvent : ICloudProvisioningEvent
+    public class ProvisioningOperationRetriedEvent : IProvisioningEvent
     {
-        // TODO (ruegg, 2011-05-27): Drop properties that we don't actually need in practice
-
+        public ProvisioningEventLevel Level { get { return ProvisioningEventLevel.Trace; } }
         public Exception Exception { get; private set; }
         public string Policy { get; private set; }
         public int Trial { get; private set; }
@@ -28,6 +28,28 @@ namespace Lokad.Cloud.Provisioning.Instrumentation.Events
             Trial = trial;
             Interval = interval;
             TrialSequence = trialSequence;
+        }
+
+        public string Describe()
+        {
+            return string.Format("Provisioning operation was retried on policy {0} ({1} trial): {2}",
+                Policy, Trial,
+                Exception != null ? Exception.Message : string.Empty);
+        }
+
+        public XElement DescribeMeta()
+        {
+            var meta = new XElement("Meta");
+
+            if (Exception != null)
+            {
+                meta.Add(new XElement("Exception",
+                    new XAttribute("typeName", Exception.GetType().FullName),
+                    new XAttribute("message", Exception.Message),
+                    Exception.ToString()));
+            }
+
+            return meta;
         }
     }
 }

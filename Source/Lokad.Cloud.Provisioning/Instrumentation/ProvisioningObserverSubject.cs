@@ -1,10 +1,9 @@
-﻿#region Copyright (c) Lokad 2010-2011
+﻿#region Copyright (c) Lokad 2010-2012
 // This code is released under the terms of the new BSD licence.
 // URL: http://www.lokad.com/
 #endregion
 
 using System;
-using Lokad.Cloud.Provisioning.Instrumentation.Events;
 
 namespace Lokad.Cloud.Provisioning.Instrumentation
 {
@@ -13,22 +12,22 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
     /// (similar to Rx's FastSubject). Use this class if you want an easy way to observe Lokad.Cloud.Provisioning
     /// using Rx. Alternatively you can implement your own storage observer instead, or not use any observers at all.
     /// </summary>
-    public class CloudProvisioningInstrumentationSubject : IDisposable, ICloudProvisioningObserver, IObservable<ICloudProvisioningEvent>
+    public class ProvisioningObserverSubject : IDisposable, IProvisioningObserver, IObservable<IProvisioningEvent>
     {
         readonly object _sync = new object();
         private bool _isDisposed;
 
-        readonly IObserver<ICloudProvisioningEvent>[] _fixedObservers;
-        IObserver<ICloudProvisioningEvent>[] _observers;
+        readonly IObserver<IProvisioningEvent>[] _fixedObservers;
+        IObserver<IProvisioningEvent>[] _observers;
 
         /// <param name="fixedObservers">Optional externally managed fixed observers, will neither be completed nor disposed by this class.</param>
-        public CloudProvisioningInstrumentationSubject(IObserver<ICloudProvisioningEvent>[] fixedObservers = null)
+        public ProvisioningObserverSubject(IObserver<IProvisioningEvent>[] fixedObservers = null)
         {
-            _fixedObservers = fixedObservers ?? new IObserver<ICloudProvisioningEvent>[0];
-            _observers = new IObserver<ICloudProvisioningEvent>[0];
+            _fixedObservers = fixedObservers ?? new IObserver<IProvisioningEvent>[0];
+            _observers = new IObserver<IProvisioningEvent>[0];
         }
 
-        void ICloudProvisioningObserver.Notify(ICloudProvisioningEvent @event)
+        void IProvisioningObserver.Notify(IProvisioningEvent @event)
         {
             if (_isDisposed)
             {
@@ -51,7 +50,7 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
             }
         }
 
-        public IDisposable Subscribe(IObserver<ICloudProvisioningEvent> observer)
+        public IDisposable Subscribe(IObserver<IProvisioningEvent> observer)
         {
             if (_isDisposed)
             {
@@ -66,7 +65,7 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
 
             lock (_sync)
             {
-                var newObservers = new IObserver<ICloudProvisioningEvent>[_observers.Length + 1];
+                var newObservers = new IObserver<IProvisioningEvent>[_observers.Length + 1];
                 Array.Copy(_observers, newObservers, _observers.Length);
                 newObservers[_observers.Length] = observer;
                 _observers = newObservers;
@@ -86,10 +85,10 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
 
         private class Subscription : IDisposable
         {
-            private readonly CloudProvisioningInstrumentationSubject _subject;
-            private IObserver<ICloudProvisioningEvent> _observer;
+            private readonly ProvisioningObserverSubject _subject;
+            private IObserver<IProvisioningEvent> _observer;
 
-            public Subscription(CloudProvisioningInstrumentationSubject subject, IObserver<ICloudProvisioningEvent> observer)
+            public Subscription(ProvisioningObserverSubject subject, IObserver<IProvisioningEvent> observer)
             {
                 _subject = subject;
                 _observer = observer;
@@ -106,7 +105,7 @@ namespace Lokad.Cloud.Provisioning.Instrumentation
                             int idx = Array.IndexOf(_subject._observers, _observer);
                             if (idx >= 0)
                             {
-                                var newObservers = new IObserver<ICloudProvisioningEvent>[_subject._observers.Length + 1];
+                                var newObservers = new IObserver<IProvisioningEvent>[_subject._observers.Length + 1];
                                 Array.Copy(_subject._observers, 0, newObservers, 0, idx);
                                 Array.Copy(_subject._observers, idx + 1, newObservers, idx, _subject._observers.Length - idx - 1);
                                 _subject._observers = newObservers;
