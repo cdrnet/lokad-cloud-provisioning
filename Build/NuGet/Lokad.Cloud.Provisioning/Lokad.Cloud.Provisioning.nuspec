@@ -13,7 +13,7 @@
     <language>en-US</language>
     <tags>azure, provisioning, automatic, scaling, lokad, cloud</tags>
     <dependencies>
-      <dependency id="HttpClient" version="0.3.0" />
+      <dependency id="HttpClient" version="[0.3.0]" />
     </dependencies>
   </metadata>
 </package>
