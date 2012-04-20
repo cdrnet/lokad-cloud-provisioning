@@ -161,6 +161,12 @@ namespace Lokad.Cloud.Provisioning
                 return false;
             }
 
+            int currentInstanceCount;
+            if (Int32.TryParse(instanceCountElement.Value, out currentInstanceCount))
+            {
+                Notify(() => new ProvisioningUpdateInstanceCountEvent(currentInstanceCount, newInstanceCount));
+            }
+
             instanceCountElement.Value = newInstanceCountString;
             return true;
         }
@@ -192,6 +198,26 @@ namespace Lokad.Cloud.Provisioning
             return ProvisioningErrorHandling.IsTransientError(exception)
                 ? (IProvisioningEvent)new ProvisioningFailedTransientEvent(exception)
                 : new ProvisioningFailedPermanentEvent(exception);
+        }
+
+        void Notify(Func<IProvisioningEvent> @event)
+        {
+            if (_observer == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _observer.Notify(@event());
+            }
+            // ReSharper disable EmptyGeneralCatchClause
+            catch
+            // ReSharper restore EmptyGeneralCatchClause
+            {
+                // Suppression is intended: we can't log but also don't want to tear down just because of a failed notification.
+                // Also, this is not where exceptions are handled in the first place, since the failed tasks are returned to the application.
+            }
         }
 
         public Task<int> GetLokadCloudWorkerCount(string serviceName, DeploymentSlot deploymentSlot, CancellationToken cancellationToken)

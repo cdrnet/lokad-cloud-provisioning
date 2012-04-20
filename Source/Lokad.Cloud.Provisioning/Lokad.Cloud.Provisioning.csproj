@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="AzureDiscovery.cs" />
     <Compile Include="Instrumentation\DescribeEvent.cs" />
+    <Compile Include="Instrumentation\Events\ProvisioningUpdateInstanceCountEvent.cs" />
     <Compile Include="Instrumentation\Events\DiscoveryFailedPermanentEvent.cs" />
     <Compile Include="Instrumentation\Events\ProvisioningFailedPermanentEvent.cs" />
     <Compile Include="Instrumentation\Events\ProvisioningFailedBecauseOfConflictEvent.cs" />
