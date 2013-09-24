@@ -5,3 +5,5 @@ Authors: Joannes Vermorel, Christoph Ruegg, Rinat Abdullin
 
 Project page: http://lokad.github.com/lokad-cloud/
 Company page: http://www.lokad.com/
+
+TODO: Upgrade to use Microsoft.Net.Http (or equivalent already part of .Net 4.5) instead of HttpClient.
