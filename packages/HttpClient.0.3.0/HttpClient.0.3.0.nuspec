@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>HttpClient</id>
+    <version>0.3.0</version>
+    <title>HttpClient</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <licenseUrl>http://wcf.codeplex.com/license</licenseUrl>
+    <projectUrl>http://wcf.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Contains a general purpose HttpClient. Does not require WCF to use.</description>
+    <summary>Contains a general purpose HttpClient. Does not require WCF to use.</summary>
+  </metadata>
+</package>
